@@ -1,0 +1,15 @@
+{
+  "name": "butter-test-streamer",
+  "version": "0.0.1",
+  "description": "tests for butter-streamers",
+  "main": "index.js",
+  "repository": "https://github.com/butterstreamers/butter-test-streamer",
+  "author": "Niv Sardi <x@btn.sh>",
+  "license": "GPLv3.0",
+  "private": false,
+  "dependencies": {
+    "assert": "^1.4.1",
+    "mocha": "^5.2.0",
+    "rimraf": "^2.6.2"
+  }
+}
