@@ -1,48 +1,41 @@
 const http = require('http')
 const assert = require('assert')
+const path = require('path')
 const fs = require('fs')
-const rimraf = require('rimraf')
+const rimraf = require('rimraf').sync
+const ButterStreamer = require('butter-streamer')
 const Streamer = require(process.cwd())
+const debug = require('debug')('butter-test-streamer')
 
 const pkg = require(path.join(process.cwd(), 'package.json'))
 const defaultConfig = {
   args: {},
   timeout: 1000,
-  url = 'http://www.frostclick.com/torrents/video/animation/Big_Buck_Bunny_1080p_surround_frostclick.com_frostwire.com.torrent',
-  port = 2011,
-  tmpFile = 'testFile.mp4'
+  uri: 'http://www.frostclick.com/torrents/video/animation/Big_Buck_Bunny_1080p_surround_frostclick.com_frostwire.com.torrent',
+  port: 2011,
+  tmpFile: 'testFile.mp4'
 }
 
-const parseArgs = (uri) {
-  const [name, args] = uri.split('?')
-  const parsed = { name }
+const config = Object.assign(
+  {}, defaultConfig, Streamer.config,
+  pkg.butter ? ButterStreamer.parseArgs(pkg.butter.testArgs) : {}
+)
 
-  if (args) {
-    args.split('&').map(v => {
-      const [ key, value ] = v.split('=')
-
-      parsed[key] =  return JSON.parse(arg)
-    })
-  }
-
-  return parsed
-}
-
-const config = Object.assign({}, defaultConfig, pkg.butter ? parseArgs(pkg.butter.testArgs) : {})
-
-module.exports = () => {
+const run = () => {
   return describe(`Butter Streamer: ${config.name}`, function () {
     let streamer
 
-    beforeEach(() => {
+    beforeEach((done) => {
       rimraf(config.tmpFile)
 
-      streamer = new Streamer(config.url, {
+      streamer = new Streamer(config.uri, {
         progressInterval: 50,
         buffer: 1000,
         port: config.port,
         writeDir: ''
       })
+
+      done()
     })
 
     it('should fire a `ready` signal', function (done) {
@@ -59,7 +52,7 @@ module.exports = () => {
       this.timeout(config.timeout)
 
       let progressed = false
-      stream.on('progress', info => {
+      streamer.on('progress', info => {
         if (!progressed) {
           progressed = true
           assert(true)
@@ -73,7 +66,7 @@ module.exports = () => {
     it('should create a video file', done => {
 
       streamer.pipe(fs.createWriteStream(config.tmpFile))
-      stream.on('progress', info => {
+      streamer.on('progress', info => {
         fs.access(config.tmpFile, fs.constants.F_OK, err => {
           assert.equal(err, undefined)
           done()
@@ -83,8 +76,12 @@ module.exports = () => {
     })
 
     it('we can close the process', done => {
-      stream.close()
+      streamer.close()
       done()
     })
   })
 }
+
+run()
+
+module.exports = run

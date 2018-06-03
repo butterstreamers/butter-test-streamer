@@ -15,12 +15,14 @@ npm i --dev butter-test-streamer
 yarn add -D butter-test-streamer
 ```
 
-and add it to your `package.json`
+and add it to your `package.json`, note that we depend on standard, so you
+don't have to do it in your package, just devDepend on us and we got you set.
 ```js
     "butter": {
         "testArgs": "streamerName?url=https://google.com&port=2093"
     },
     "scripts": {
+        "lint": "standard --env mocha",
         "tests": "mocha node_modules/butter-test-streamer/*.js"
     }
 ```
