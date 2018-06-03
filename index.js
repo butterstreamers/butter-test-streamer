@@ -21,8 +21,11 @@ const config = Object.assign(
   pkg.butter ? ButterStreamer.parseArgs(pkg.butter.testArgs) : {}
 )
 
+debug('test', config)
+
 const run = () => {
   return describe(`Butter Streamer: ${config.name}`, function () {
+    this.timeout(config.timeout)
     let streamer
 
     beforeEach((done) => {
