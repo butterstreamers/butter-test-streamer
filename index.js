@@ -100,6 +100,13 @@ const run = () => {
 
     it('we can close the process', done => {
       streamer.close()
+      assert(true)
+      done()
+    })
+
+    it('we can destroy', done => {
+      streamer.destroy()
+      assert(true)
       done()
     })
   })
