@@ -71,10 +71,14 @@ const run = () => {
 
       let progressed = false
       streamer.on('progress', info => {
-        streamer.seek(info.downloaded*99/info.progress)
+        if (!progressed) {
+          progressed = true
+          streamer.seek(info.downloaded*99/info.progress)
+        }
       })
 
       streamer.on('complete', info => {
+        debug('got complete, seek worked', info)
         assert(true)
         done()
       })
