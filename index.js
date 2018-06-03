@@ -10,7 +10,7 @@ const debug = require('debug')('butter-test-streamer')
 const pkg = require(path.join(process.cwd(), 'package.json'))
 const defaultConfig = {
   args: {},
-  timeout: 5000,
+  timeout: 10000,
   uri: 'http://www.frostclick.com/torrents/video/animation/Big_Buck_Bunny_1080p_surround_frostclick.com_frostwire.com.torrent',
   port: 2011,
   tmpFile: 'testFile.mp4'
