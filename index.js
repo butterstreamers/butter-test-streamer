@@ -44,9 +44,9 @@ const run = () => {
     it('should fire a `ready` signal', function (done) {
       this.timeout(config.timeout)
 
-
       streamer.on('ready', info => {
-        debug(info)
+        debug('got ready', info)
+        assert(true)
         done()
       })
     })
@@ -61,6 +61,22 @@ const run = () => {
           assert(true)
           done()
         }
+      })
+
+      streamer.pipe(fs.createWriteStream(config.tmpFile))
+    })
+
+    it('should seek', done => {
+      this.timeout(config.timeout)
+
+      let progressed = false
+      streamer.on('progress', info => {
+        streamer.seek(info.downloaded*99/info.progress)
+      })
+
+      streamer.on('complete', info => {
+        assert(true)
+        done()
       })
 
       streamer.pipe(fs.createWriteStream(config.tmpFile))
