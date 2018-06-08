@@ -31,19 +31,23 @@ const run = () => {
     let streamer
 
     beforeEach((done) => {
-      rimraf(options.tmpFile)
-
-      if (streamer) {
-        streamer.destroy()
-        streamer = null
-      }
-
       streamer = new Streamer(options.uri, {
         progressInterval: 50,
         buffer: 1000,
         port: options.port,
         writeDir: ''
       })
+
+      done()
+    })
+
+    afterEach((done) => {
+      rimraf(options.tmpFile)
+
+      if (streamer) {
+        streamer.destroy()
+        streamer = null
+      }
 
       done()
     })
@@ -77,17 +81,18 @@ const run = () => {
       this.timeout(options.timeout)
 
       let progressed = false
-      streamer.on('progress', info => {
-        if (!progressed) {
-          progressed = true
-          streamer.seek(streamer.length*0.99)
-        }
-      })
 
       streamer.on('complete', info => {
         debug('got complete, seek worked', info)
         assert(true)
         done()
+      })
+      
+      streamer.on('progress', info => {
+        if (!progressed) {
+          progressed = true
+          streamer.seek(streamer.length - 2048)
+        }
       })
 
       streamer.pipe(nullStream)
@@ -107,8 +112,10 @@ const run = () => {
 
     it('we can destroy', done => {
       streamer.pipe(nullStream)
+
       streamer.on('progress', info => {
         streamer.destroy()
+        streamer = null
         assert(true)
         done()
       })
