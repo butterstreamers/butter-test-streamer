@@ -1,4 +1,3 @@
-const http = require('http')
 const assert = require('assert')
 const path = require('path')
 const fs = require('fs')
@@ -28,7 +27,8 @@ const run = () => {
   return describe(`Butter Streamer: ${options.name}`, function () {
     this.timeout(options.timeout)
     const nullStream = new NullWritable()
-    let streamer
+    let streamer = null
+    let stream = null
 
     beforeEach((done) => {
       streamer = new Streamer(options.uri, {
@@ -44,6 +44,11 @@ const run = () => {
     afterEach((done) => {
       rimraf(options.tmpFile)
 
+      if (stream) {
+        stream.destroy()
+        stream = null
+      }
+
       if (streamer) {
         streamer.destroy()
         streamer = null
@@ -56,7 +61,7 @@ const run = () => {
       this.timeout(options.timeout)
 
       streamer.on('ready', info => {
-        debug('got ready', info)
+        debug('got ready', info.source)
         assert(true)
         done()
       })
@@ -66,7 +71,9 @@ const run = () => {
       this.timeout(options.timeout)
 
       streamer.on('ready', info => {
-        const stream = info.files[0].createReadStream()
+        const file = info.files[0]
+        debug('creating readStream on file 0', file.name)
+        stream = file.createReadStream()
         stream.pipe(nullStream)
       })
 
@@ -82,21 +89,26 @@ const run = () => {
 
     it('should seek', done => {
       this.timeout(options.timeout)
+
+      let progressed = false
       streamer.on('ready', info => {
         let file = info.files[0]
-        let stream = file.createReadStream()
+        debug('creating readStream on file 0', file.name)
+        stream = file.createReadStream()
         stream.pipe(nullStream)
 
-        stream.on('progress', info => {
-          if (!progressed) {
-            progressed = true
-            let stream = file.createReadStream(file.length - 2048)
-            stream.pipe(nullStream)
-          }
+        streamer.on('progress', info => {
+          if (progressed) return
+
+          progressed = true
+          const offset = file.length - 2048
+          stream.destroy()
+          debug('creating readStream on file 0', file.name, 'at offset', offset)
+          stream = file.createReadStream({start: offset})
+          stream.pipe(nullStream)
         })
       })
 
-      let progressed = false
       streamer.on('complete', info => {
         debug('got complete, seek worked', info)
         assert(true)
@@ -107,7 +119,7 @@ const run = () => {
     it('should create a video file', done => {
       streamer.on('ready', info => {
         debug('got ready, creating stream', options.tmpFile)
-        const stream = info.files[0].createReadStream()
+        stream = info.files[0].createReadStream()
         stream.pipe(fs.createWriteStream(options.tmpFile))
       })
 
@@ -122,8 +134,8 @@ const run = () => {
 
     it('we can destroy', done => {
       streamer.on('ready', info => {
-        const stream = info.files[0].createReadStream()
-        streamer.pipe(nullStream)
+        stream = info.files[0].createReadStream()
+        stream.pipe(nullStream)
       })
 
       streamer.on('progress', info => {
