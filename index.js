@@ -65,6 +65,11 @@ const run = () => {
     it('should return progress', done => {
       this.timeout(options.timeout)
 
+      streamer.on('ready', info => {
+        const stream = info.files[0].createReadStream()
+        stream.pipe(nullStream)
+      })
+
       let progressed = false
       streamer.on('progress', info => {
         if (!progressed) {
@@ -73,45 +78,53 @@ const run = () => {
           done()
         }
       })
-
-      streamer.pipe(nullStream)
     })
 
     it('should seek', done => {
       this.timeout(options.timeout)
+      streamer.on('ready', info => {
+        let file = info.files[0]
+        let stream = file.createReadStream()
+        stream.pipe(nullStream)
+
+        stream.on('progress', info => {
+          if (!progressed) {
+            progressed = true
+            let stream = file.createReadStream(file.length - 2048)
+            stream.pipe(nullStream)
+          }
+        })
+      })
 
       let progressed = false
-
       streamer.on('complete', info => {
         debug('got complete, seek worked', info)
         assert(true)
         done()
       })
-      
-      streamer.on('progress', info => {
-        if (!progressed) {
-          progressed = true
-          streamer.seek(streamer.length - 2048)
-        }
-      })
-
-      streamer.pipe(nullStream)
     })
 
     it('should create a video file', done => {
+      streamer.on('ready', info => {
+        debug('got ready, creating stream', options.tmpFile)
+        const stream = info.files[0].createReadStream()
+        stream.pipe(fs.createWriteStream(options.tmpFile))
+      })
 
-      streamer.pipe(fs.createWriteStream(options.tmpFile))
       streamer.on('progress', info => {
+        debug('got progress, checking file')
         fs.access(options.tmpFile, fs.constants.F_OK, err => {
-          assert.equal(err, undefined)
+          if (err) return
           done()
         })
       })
-
     })
 
     it('we can destroy', done => {
-      streamer.pipe(nullStream)
+      streamer.on('ready', info => {
+        const stream = info.files[0].createReadStream()
+        streamer.pipe(nullStream)
+      })
 
       streamer.on('progress', info => {
         streamer.destroy()
